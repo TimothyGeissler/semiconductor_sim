@@ -5,6 +5,8 @@ Q = 1.602177*math.pow(10, -19)
 ni = 1.07*math.pow(10, 10) #Intrinsic carrier concentration
 kB = 0.00008617333262
 T = 300
+epsilon_r = 11.68 #rel permitivity of Si
+epsilon_o = 8.854*math.pow(10, -12) #permitivity of vacuum
 
 ## Room temp, non-compensated n-type Si with Nd dopants ##
 
@@ -101,6 +103,32 @@ def tau_rec_n(Nd):
         return 1/((7.8*10**-13) * Nd + (1.8*10**-31)*(Nd*Nd))
     except:
         return 0
+    
+## PN JUNCTION DIODES ##
+
+# Builtin voltage - Th Eq (Volts)
+def v_bi(Na, Nd):
+    return ((kB * T)) * math.log(Na * Nd / (ni**2))
+
+# Builtin voltage - p side
+def V_biP(Na, Nd):
+    return ((Q * Na) / (2 *  epsilon_o * epsilon_r)) * W_dP(Na, Nd)*W_dP(Na, Nd)
+
+# Builtin voltage - n side
+def V_biN(Na, Nd):
+    return ((Q * Nd) / (2 *  epsilon_o * epsilon_r)) * W_dN(Na, Nd)*W_dN(Na, Nd)
+
+# P-side depletion width (um)
+def W_dP(Na, Nd):
+    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Nd/(Na*(Na + Nd))) * v_bi(Na, Nd)) * 10**4
+
+# N-side depletion width (um)
+def W_dN(Na, Nd):
+    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Na/(Nd*(Na + Nd))) * v_bi(Na, Nd)) * 10**4
+
+# Total depletiuon width
+def W_d(Na, Nd):
+    return W_dN(Na, Nd) + W_dP(Na, Nd)
 
 ## PRINT STATEMENTS ##
 def comp_concentration(Na, Nd):
@@ -121,6 +149,12 @@ def comp_concentration(Na, Nd):
         print("\n## Electron Diffusion Coefficient (p-type) ##\nD_n=" + str(diff_coeff(T, mu_nP(Na))))
         print("\n## Recombination Lifetime (sec) ##\ntau_rec,P= " + "{:E}".format(tau_rec_p(Na)) + "\ttau_rec,N=" + "{:E}".format(tau_rec_n(Nd)))
 
+def print_pn_junc(Na, Nd):
+    # Print PN Junction data
+    print("\n## PN JUNCTION ##\n")
+    print("\n## Builtin voltage (V) ##\nV_bi,P=" + str(V_biP(Na, Nd)) + "\tV_bi,N=" + str(V_biN(Na, Nd)) + "\tV_bi=" + str(v_bi(Na, Nd)))
+    print("\n## Depletion Region Width (um) ##\nW_d,p=" + str(W_dP(Na, Nd)) + "\tW_d,n=" + str(W_dN(Na, Nd)) + "\tW_d=" + str(W_d(Na, Nd)))
+
 def mu_ptype(Na):
     print("\n## Low-field bulk mobility (p-type) (cm^2/V.s) ## \nMajority mu_p,P=" + str(mu_pP(Na)) + "\tMinority mu_n,P=" + str(mu_nP(Na)))
 
@@ -130,12 +164,13 @@ def mu_ntype(Nd):
 
 ## USAGE ##
 
-Na = 0#1*math.pow(10, 17)
-Nd = 2.5*math.pow(10, 16)
+Na = 7.5*math.pow(10, 16)
+Nd = 4.2*math.pow(10, 17)
 
 E = 2.5*math.pow(10, 3) #for drift velocity
 
 
 comp_concentration(Na, Nd)
-print(j_pxdrift(pN(2*math.pow(10,16)), 2.5*math.pow(10, 3), mu_pN(Nd = 2*math.pow(10, 16))))
+print_pn_junc(Na, Nd)
+#print(j_pxdrift(pN(2*math.pow(10,16)), 2.5*math.pow(10, 3), mu_pN(Nd = 2*math.pow(10, 16))))
 #print(rho_N(1*math.pow(10, 18), math.pow(10, 18), math.pow((1.07*math.pow(10,10)), 2)/ math.pow(10, 18)))
