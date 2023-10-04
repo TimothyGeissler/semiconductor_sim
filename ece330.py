@@ -112,23 +112,43 @@ def v_bi(Na, Nd):
 
 # Builtin voltage - p side
 def V_biP(Na, Nd):
-    return ((Q * Na) / (2 *  epsilon_o * epsilon_r)) * W_dP(Na, Nd)*W_dP(Na, Nd)
+    return ((Q * Na) / (2 *  epsilon_o * epsilon_r)) * W_dP(Na, Nd)**2
 
 # Builtin voltage - n side
 def V_biN(Na, Nd):
     return ((Q * Nd) / (2 *  epsilon_o * epsilon_r)) * W_dN(Na, Nd)*W_dN(Na, Nd)
 
-# P-side depletion width (um)
+# P-side depletion width (cm)
 def W_dP(Na, Nd):
-    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Nd/(Na*(Na + Nd))) * v_bi(Na, Nd)) * 10**4
+    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Nd/(Na*(Na + Nd))) * v_bi(Na, Nd)) 
 
-# N-side depletion width (um)
+# N-side depletion width (cm)
 def W_dN(Na, Nd):
-    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Na/(Nd*(Na + Nd))) * v_bi(Na, Nd)) * 10**4
+    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Na/(Nd*(Na + Nd))) * v_bi(Na, Nd)) 
 
 # Total depletiuon width
 def W_d(Na, Nd):
     return W_dN(Na, Nd) + W_dP(Na, Nd)
+
+# Max electric field
+def E_max(Na, Nd):
+    return ((-Q * Na)/(epsilon_o * epsilon_r)) * W_dP(Na, Nd)
+
+# Electron distribution p-side depletion region
+def n_p_dep(Na, Nd, x):
+    return ((ni**2)/Na) * math.exp((((Q**2)*Na)/(2*epsilon_o*epsilon_r*kB*T))*(W_dP(Na, Nd) + x)**2)
+
+# Hole distribution p-side depletion region
+def p_p_dep(Na, Nd, x):
+    return Na*math.exp(-(((Q**2)*Na)/(2*epsilon_o*epsilon_r*kB*T))*(W_dP(Na, Nd) + x)**2)
+
+# Electron distribution n-side depletion region
+def n_n_dep(Na, Nd, x):
+    return Nd*math.exp(-(((Q**2)*Nd)/(2*epsilon_o*epsilon_r*kB*T))*(W_dN(Na, Nd) - x)**2)
+
+# Hole distribution n-side depletion region
+def p_n_dep(Na, Nd, x):
+    return ((ni**2)/Nd) * math.exp((((Q**2)*Nd)/(2*epsilon_o*epsilon_r*kB*T))*(W_dN(Na, Nd) - x)**2)
 
 ## PRINT STATEMENTS ##
 def comp_concentration(Na, Nd):
@@ -153,7 +173,10 @@ def print_pn_junc(Na, Nd):
     # Print PN Junction data
     print("\n## PN JUNCTION ##\n")
     print("\n## Builtin voltage (V) ##\nV_bi,P=" + str(V_biP(Na, Nd)) + "\tV_bi,N=" + str(V_biN(Na, Nd)) + "\tV_bi=" + str(v_bi(Na, Nd)))
-    print("\n## Depletion Region Width (um) ##\nW_d,p=" + str(W_dP(Na, Nd)) + "\tW_d,n=" + str(W_dN(Na, Nd)) + "\tW_d=" + str(W_d(Na, Nd)))
+    print("\n## Depletion Region Width (cm) ##\nW_d,p=" + str(W_dP(Na, Nd)) + "\tW_d,n=" + str(W_dN(Na, Nd)) + "\tW_d=" + str(W_d(Na, Nd)))
+    print("\n## Max Elextric field (x=0) (V/cm) ##\nE_max=" + str(E_max(Na, Nd)))
+    print("\n## Carrier concentration (Depletion Region) x=" + str(x) + " ##\nn_p(x)=" + str(n_p_dep(Na, Nd, x)) + "\tp_p(x)=" + str(p_p_dep(Na, Nd, x))
+          + "\tn_n(x)=" + str(n_n_dep(Na, Nd, x)) + "\tp_n(x)=" + str(p_n_dep(Na, Nd, x)))
 
 def mu_ptype(Na):
     print("\n## Low-field bulk mobility (p-type) (cm^2/V.s) ## \nMajority mu_p,P=" + str(mu_pP(Na)) + "\tMinority mu_n,P=" + str(mu_nP(Na)))
@@ -165,7 +188,10 @@ def mu_ntype(Nd):
 ## USAGE ##
 
 Na = 7.5*math.pow(10, 16)
-Nd = 4.2*math.pow(10, 17)
+Nd = 4.2*math.pow(10, 16)
+
+# PN Junction variables
+x = 0
 
 E = 2.5*math.pow(10, 3) #for drift velocity
 
