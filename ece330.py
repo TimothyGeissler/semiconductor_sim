@@ -6,7 +6,7 @@ ni = 1.07*math.pow(10, 10) #Intrinsic carrier concentration
 kB = 0.00008617333262
 T = 300
 epsilon_r = 11.68 #rel permitivity of Si
-epsilon_o = 8.854*math.pow(10, -12) #permitivity of vacuum
+epsilon_o = 8.854*math.pow(10, -14) #permitivity of vacuum
 
 ## Room temp, non-compensated n-type Si with Nd dopants ##
 
@@ -27,7 +27,7 @@ def mu_pN(Nd):
     return 130 + 370/(1 + math.pow((Nd/(8*math.pow(10, 17))), 1.25));
 
 
-## Room temp, non-compensated p-type Si with Na dopants ##
+## Room temp,  siliconnon-compensated p-type Si with Na dopants ##
 
 # Majority carrier concentration
 def pP(Na):
@@ -132,7 +132,8 @@ def W_d(Na, Nd):
 
 # Max electric field
 def E_max(Na, Nd):
-    return ((-Q * Na)/(epsilon_o * epsilon_r)) * W_dP(Na, Nd)
+    #return ((-Q * Na)/(epsilon_o * epsilon_r)) * W_dP(Na, Nd)
+    return -math.sqrt(((2 * Q)/(epsilon_o * epsilon_r)) * ((Na * Nd)/(Na + Nd)) * (v_bi(Na, Nd)))
 
 # Electron distribution p-side depletion region
 def n_p_dep(Na, Nd, x):
