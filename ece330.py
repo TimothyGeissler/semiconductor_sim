@@ -3,7 +3,7 @@ import math
 
 Q = 1.602177*math.pow(10, -19)
 ni = 1.07*math.pow(10, 10) #Intrinsic carrier concentration
-kB = 0.00008617333262
+kB = 1.380649*math.pow(10, -23)#0.00008617333262
 T = 300
 epsilon_r = 11.68 #rel permitivity of Si
 epsilon_o = 8.854*math.pow(10, -14) #permitivity of vacuum
@@ -19,12 +19,12 @@ def pN(Na):
     return (2*(ni)*(ni))/(Nd + math.sqrt((Nd)*(Nd) + 4*(ni)*(ni)))
 
 # Majority electron low-field bulk mobility (cm^2/Vs) 92 + 1268/(1 + (Nd(1.3×10^17))^0.91)
-def mu_nN(Nd):
-    return 92 + 1268/(1 + math.pow((Nd/(1.3*math.pow(10, 17))), 0.91))
+def mu_nN(Na, Nd):
+    return 92 + 1268/(1 + math.pow(((Na + Nd)/(1.3*math.pow(10, 17))), 0.91))
 
 #  Minority holes low-field bulk mobility
-def mu_pN(Nd):
-    return 130 + 370/(1 + math.pow((Nd/(8*math.pow(10, 17))), 1.25));
+def mu_pN(Na, Nd):
+    return 130 + 370/(1 + math.pow(((Na + Nd)/(8*math.pow(10, 17))), 1.25));
 
 
 ## Room temp,  siliconnon-compensated p-type Si with Na dopants ##
@@ -38,12 +38,12 @@ def nP(Na):
     return (2*(ni)*(ni))/(Na + math.sqrt((Na)*(Na) + 4*(ni)*(ni)))
 
 # Majority hole low-field bulk mobility (cm^2/Vs)
-def mu_pP(Na):
-    return 49.7 + 418.3/(1 + math.pow((Na/(1.6*math.pow(10, 17))), 0.7))
+def mu_pP(Na, Nd):
+    return 49.7 + 418.3/(1 + math.pow(((Na + Nd)/(1.6*math.pow(10, 17))), 0.7))
 
 #  Minority electron low-field bulk mobility
-def mu_nP(Na):
-    return 232 + 1180/(1 + math.pow((Na/(8*math.pow(10, 16))), 0.9))
+def mu_nP(Na, Nd):
+    return 232 + 1180/(1 + math.pow(((Na + Nd)/(8*math.pow(10, 16))), 0.9))
 
 
 ## Compensated Silicon Regions ##
@@ -66,11 +66,11 @@ def compensated_pN(Na, Nd):
 
 # Resistivity of an n-type Si (Ohm.cm)
 def rho_N(Nd, n, p):
-    return 1/(Q * (mu_nN(Nd) * n + mu_pN(Nd) * p))
+    return 1/(Q * (mu_nN(Na, Nd) * n + mu_pN(Na, Nd) * p))
 
 # Resistivity of a p-type Si (Ohm.cm)
 def rho_P(Na, n, p):
-    return 1/(Q * (mu_nP(Na) * n + mu_pP(Na) * p))
+    return 1/(Q * (mu_nP(Na, Nd) * n + mu_pP(Na, Nd) * p))
 
 # Electron drift velocity
 def v_ndrift(E, mu_n):
@@ -108,7 +108,7 @@ def tau_rec_n(Nd):
 
 # Builtin voltage - Th Eq (Volts)
 def v_bi(Na, Nd):
-    return ((kB * T)) * math.log(Na * Nd / (ni**2))
+    return ((kB * T)/Q) * math.log(Na * Nd / (ni**2))
 
 # Builtin voltage - p side
 def V_biP(Na, Nd):
@@ -158,16 +158,16 @@ def comp_concentration(Na, Nd):
         print("\n## For compensated n-type (cm^-3) ##\nMajority nN=" + "{:E}".format(compensated_nN(Na, Nd)) + "\tMinority pN=" + "{:E}".format(compensated_pN(Na, Nd)))
         mu_ntype(Nd)
         print("\n## Resistivity (n-type) (Ohm.cm) ##\nrho_n=" + str(rho_N(Nd, compensated_nN(Na, Nd), compensated_pN(Na, Nd))))
-        print("\n## Drift velocity (n-type)\nElectron drift v_n,drift=" + "{:E}".format(v_ndrift(E, mu_nN(Nd))) + "\tHole drift v_p,drift=" + "{:E}".format(v_pdrift(E, mu_pN(Nd))))
-        print("\n## Hole Diffusion Coefficient (n-type) ##\nD_n=" + str(diff_coeff(T, mu_pN(Nd))))
+        print("\n## Drift velocity (n-type)\nElectron drift v_n,drift=" + "{:E}".format(v_ndrift(E, mu_nN(Na, Nd))) + "\tHole drift v_p,drift=" + "{:E}".format(v_pdrift(E, mu_pN(Na, Nd))))
+        print("\n## Diffusion Coefficient (n-type) (cm^2/s) ##\nD_p,N=" + str(diff_coeff(T, mu_pN(Na, Nd))) + "\tD_n,N=" + str(diff_coeff(T, mu_nN(Na, Nd))))
         print("\n## Recombination Lifetime (Sec) ##\ntau_rec,P= " + "{:E}".format(tau_rec_p(Na)) + "\ttau_rec,N=" + "{:E}".format(tau_rec_n(Nd)))
     else:
         # Compensated p-type
         print("\n## For compensated p-type (cm^-3) ##\nMajority pP=" + "{:E}".format(compensated_pP(Na, Nd)) + "\tMinority nP=" + "{:E}".format(compensated_nP(Na, Nd)))
         mu_ptype(Na)
         print("\n## Resistivity (p-type) (Ohm.cm) ##\nrho_p=" + str(rho_P(Na, compensated_nP(Na, Nd), compensated_pP(Na, Nd))))
-        print("\n## Drift velocity (p-type)\nElectron drift v_n,drift=" + "{:E}".format(v_ndrift(E, mu_nP(Na))) + "\tHole drift v_p,drift=" + "{:E}".format(v_pdrift(E, mu_pP(Na))))
-        print("\n## Electron Diffusion Coefficient (p-type) ##\nD_n=" + str(diff_coeff(T, mu_nP(Na))))
+        print("\n## Drift velocity (p-type)\nElectron drift v_n,drift=" + "{:E}".format(v_ndrift(E, mu_nP(Na, Nd))) + "\tHole drift v_p,drift=" + "{:E}".format(v_pdrift(E, mu_pP(Na, Nd))))
+        print("\n## Diffusion Coefficient (p-type) (cm^2/s) ##\nD_n=" + str(diff_coeff(T, mu_nP(Na, Nd))) + str(diff_coeff(T, mu_pP(Na, Nd))))
         print("\n## Recombination Lifetime (sec) ##\ntau_rec,P= " + "{:E}".format(tau_rec_p(Na)) + "\ttau_rec,N=" + "{:E}".format(tau_rec_n(Nd)))
 
 def print_pn_junc(Na, Nd):
@@ -180,16 +180,16 @@ def print_pn_junc(Na, Nd):
           + "\tn_n(x)=" + str(n_n_dep(Na, Nd, x)) + "\tp_n(x)=" + str(p_n_dep(Na, Nd, x)))
 
 def mu_ptype(Na):
-    print("\n## Low-field bulk mobility (p-type) (cm^2/V.s) ## \nMajority mu_p,P=" + str(mu_pP(Na)) + "\tMinority mu_n,P=" + str(mu_nP(Na)))
+    print("\n## Low-field bulk mobility (p-type) (cm^2/V.s) ## \nMajority mu_p,P=" + str(mu_pP(Na, Nd)) + "\tMinority mu_n,P=" + str(mu_nP(Na, Nd)))
 
 def mu_ntype(Nd):
-    print("\n## Low-field bulk mobility (n-type) (cm^2/V.s) ## \nMajority mu_n,N=" + str(mu_nN(Nd)) + "\tMinority mu_p,N=" + str(mu_pN(Nd)))
+    print("\n## Low-field bulk mobility (n-type) (cm^2/V.s) ## \nMajority mu_n,N=" + str(mu_nN(Na, Nd)) + "\tMinority mu_p,N=" + str(mu_pN(Na, Nd)))
 
 
 ## USAGE ##
 
-Na = 7.5*math.pow(10, 16)
-Nd = 4.2*math.pow(10, 16)
+Na = 0#3.2*math.pow(10, 16)
+Nd = 2*math.pow(10, 16)
 
 # PN Junction variables
 x = 0
