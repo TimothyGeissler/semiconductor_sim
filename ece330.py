@@ -8,6 +8,8 @@ T = 300
 epsilon_r = 11.68 #rel permitivity of Si
 epsilon_o = 8.854*math.pow(10, -14) #permitivity of vacuum
 
+V_PN = 0.65# Bias Voltage, PN Junction DiodeSS
+
 ## Room temp, non-compensated n-type Si with Nd dopants ##
 
 # Majority carrier concentration
@@ -112,19 +114,21 @@ def v_bi(Na, Nd):
 
 # Builtin voltage - p side
 def V_biP(Na, Nd):
-    return ((Q * Na) / (2 *  epsilon_o * epsilon_r)) * W_dP(Na, Nd)**2
+    #return ((Q * Na) / (2 *  epsilon_o * epsilon_r)) * W_dP(Na, Nd)**2
+    return (Nd/(Na + Nd))*(v_bi(Na, Nd) - V_PN)
 
 # Builtin voltage - n side
 def V_biN(Na, Nd):
-    return ((Q * Nd) / (2 *  epsilon_o * epsilon_r)) * W_dN(Na, Nd)*W_dN(Na, Nd)
+    #return ((Q * Nd) / (2 *  epsilon_o * epsilon_r)) * W_dN(Na, Nd)*W_dN(Na, Nd)
+    return (Na/(Na + Nd)) * (v_bi(Na, Nd) - V_PN)
 
 # P-side depletion width (cm)
 def W_dP(Na, Nd):
-    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Nd/(Na*(Na + Nd))) * v_bi(Na, Nd)) 
+    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Nd/(Na*(Na + Nd))) * (v_bi(Na, Nd - V_PN))) 
 
 # N-side depletion width (cm)
 def W_dN(Na, Nd):
-    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Na/(Nd*(Na + Nd))) * v_bi(Na, Nd)) 
+    return math.sqrt((2*epsilon_o*epsilon_r / Q) * (Na/(Nd*(Na + Nd))) * (v_bi(Na, Nd) - V_PN)) 
 
 # Total depletiuon width
 def W_d(Na, Nd):
@@ -137,7 +141,7 @@ def E_max(Na, Nd):
 
 # Electron distribution p-side depletion region
 def n_p_dep(Na, Nd, x):
-    return ((ni**2)/Na) * math.exp((((Q**2)*Na)/(2*epsilon_o*epsilon_r*kB*T))*(W_dP(Na, Nd) + x)**2)
+    return ((ni**2)/Na) * math.exp((Q * V_PN) / (kB * T)) * math.exp((((Q**2)*Na)/(2*epsilon_o*epsilon_r*kB*T))*(W_dP(Na, Nd) + x)**2)
 
 # Hole distribution p-side depletion region
 def p_p_dep(Na, Nd, x):
@@ -149,7 +153,27 @@ def n_n_dep(Na, Nd, x):
 
 # Hole distribution n-side depletion region
 def p_n_dep(Na, Nd, x):
-    return ((ni**2)/Nd) * math.exp((((Q**2)*Nd)/(2*epsilon_o*epsilon_r*kB*T))*(W_dN(Na, Nd) - x)**2)
+    return ((ni**2)/Nd) * math.exp((Q * V_PN) / (kB * T)) * math.exp((((Q**2)*Nd)/(2*epsilon_o*epsilon_r*kB*T))*(W_dN(Na, Nd) - x)**2)
+
+# Minority Carrier (n) recombination Diffusion length (p side)
+def L_rec_n(Na, Nd, mu):
+    return math.sqrt(diff_coeff(T, mu_nP(Na, Nd)) * tau_rec_n(Nd))
+
+# Minority Carrier (p) recombination Diffusion length ((n side))
+def L_rec_p(Na, Nd, mu):
+    return math.sqrt(diff_coeff(T, mu_pN(Na, Nd)) * tau_rec_p(Na))
+
+# Minority carrier (n) generation diff length (p side)
+def L_gen_n(Na, Nd, mu):
+    return math.sqrt(diff_coeff(T, mu_nP(Na, Nd)) * tau_rec_n(Nd) * 75)
+
+# Minority carrier (p) generation diff length (n side)
+def L_gen_p(Na, Nd, mu):
+    return math.sqrt(diff_coeff(T, mu_pN(Na, Nd)) * tau_rec_p(Na) + 75)
+
+# Hole diffusion current density, n-side, at W_p,N - long Base
+def J_pdiffN_LB(Na, Nd):
+    return ((Q * diff_coeff(T, mu_pN(Na, Nd)) * ni**2) / (L_rec_p(Na, Nd, mu_pN(Na, Nd)) * Nd)) * (math.exp((Q * V_PN) / (kB * T)) - 1)
 
 ## PRINT STATEMENTS ##
 def comp_concentration(Na, Nd):
@@ -159,7 +183,7 @@ def comp_concentration(Na, Nd):
         mu_ntype(Nd)
         print("\n## Resistivity (n-type) (Ohm.cm) ##\nrho_n=" + str(rho_N(Nd, compensated_nN(Na, Nd), compensated_pN(Na, Nd))))
         print("\n## Drift velocity (n-type)\nElectron drift v_n,drift=" + "{:E}".format(v_ndrift(E, mu_nN(Na, Nd))) + "\tHole drift v_p,drift=" + "{:E}".format(v_pdrift(E, mu_pN(Na, Nd))))
-        print("\n## Diffusion Coefficient (n-type) (cm^2/s) ##\nD_p,N=" + str(diff_coeff(T, mu_pN(Na, Nd))) + "\tD_n,N=" + str(diff_coeff(T, mu_nN(Na, Nd))))
+        print("\n## Diffusion Coefficient (cm^2/s) ##\nD_p,N=" + str(diff_coeff(T, mu_pN(Na, Nd))) + "\tD_n,N=" + str(diff_coeff(T, mu_nN(Na, Nd))))
         print("\n## Recombination Lifetime (Sec) ##\ntau_rec,P= " + "{:E}".format(tau_rec_p(Na)) + "\ttau_rec,N=" + "{:E}".format(tau_rec_n(Nd)))
     else:
         # Compensated p-type
@@ -167,7 +191,7 @@ def comp_concentration(Na, Nd):
         mu_ptype(Na)
         print("\n## Resistivity (p-type) (Ohm.cm) ##\nrho_p=" + str(rho_P(Na, compensated_nP(Na, Nd), compensated_pP(Na, Nd))))
         print("\n## Drift velocity (p-type)\nElectron drift v_n,drift=" + "{:E}".format(v_ndrift(E, mu_nP(Na, Nd))) + "\tHole drift v_p,drift=" + "{:E}".format(v_pdrift(E, mu_pP(Na, Nd))))
-        print("\n## Diffusion Coefficient (p-type) (cm^2/s) ##\nD_n=" + str(diff_coeff(T, mu_nP(Na, Nd))) + str(diff_coeff(T, mu_pP(Na, Nd))))
+        print("\n## Diffusion Coefficient (cm^2/s) ##\nD_p,N=" + str(diff_coeff(T, mu_pN(Na, Nd))) + "\tD_n,N=" + str(diff_coeff(T, mu_nN(Na, Nd))))
         print("\n## Recombination Lifetime (sec) ##\ntau_rec,P= " + "{:E}".format(tau_rec_p(Na)) + "\ttau_rec,N=" + "{:E}".format(tau_rec_n(Nd)))
 
 def print_pn_junc(Na, Nd):
@@ -175,9 +199,10 @@ def print_pn_junc(Na, Nd):
     print("\n## PN JUNCTION ##\n")
     print("\n## Builtin voltage (V) ##\nV_bi,P=" + str(V_biP(Na, Nd)) + "\tV_bi,N=" + str(V_biN(Na, Nd)) + "\tV_bi=" + str(v_bi(Na, Nd)))
     print("\n## Depletion Region Width (cm) ##\nW_d,p=" + str(W_dP(Na, Nd)) + "\tW_d,n=" + str(W_dN(Na, Nd)) + "\tW_d=" + str(W_d(Na, Nd)))
-    print("\n## Max Elextric field (x=0) (V/cm) ##\nE_max=" + str(E_max(Na, Nd)))
+    print("\n## Max Elextric field (x=" + str(x) + ") (V/cm) ##\nE_max=" + str(E_max(Na, Nd)))
     print("\n## Carrier concentration (Depletion Region) x=" + str(x) + " ##\nn_p(x)=" + str(n_p_dep(Na, Nd, x)) + "\tp_p(x)=" + str(p_p_dep(Na, Nd, x))
           + "\tn_n(x)=" + str(n_n_dep(Na, Nd, x)) + "\tp_n(x)=" + str(p_n_dep(Na, Nd, x)))
+    print("\n## Hole Diffusion Current Density @ edge of n-side depletion region (Long Base) J_pxdiff,N(W,dN , V_PN)=" + str(J_pdiffN_LB(Na, Nd)))
 
 def mu_ptype(Na):
     print("\n## Low-field bulk mobility (p-type) (cm^2/V.s) ## \nMajority mu_p,P=" + str(mu_pP(Na, Nd)) + "\tMinority mu_n,P=" + str(mu_nP(Na, Nd)))
@@ -188,16 +213,18 @@ def mu_ntype(Nd):
 
 ## USAGE ##
 
-Na = 0#3.2*math.pow(10, 16)
-Nd = 2*math.pow(10, 16)
+Na = 3*math.pow(10, 17)
+Nd = 5*math.pow(10, 16)
 
 # PN Junction variables
-x = 0
-
+x = W_dN(Na, Nd)
+V_PN = 0 # Bias Voltage
 E = 2.5*math.pow(10, 3) #for drift velocity
 
 
 comp_concentration(Na, Nd)
 print_pn_junc(Na, Nd)
 #print(j_pxdrift(pN(2*math.pow(10,16)), 2.5*math.pow(10, 3), mu_pN(Nd = 2*math.pow(10, 16))))
-#print(rho_N(1*math.pow(10, 18), math.pow(10, 18), math.pow((1.07*math.pow(10,10)), 2)/ math.pow(10, 18)))
+#print(rho_N(1*math.pow(10, 18), math.pow(10, 18), math.pow((1.07*math.pow(10,10)), 2)/ math.pow(10, 18))
+
+print(str(L_rec_n(Na, Nd, mu_nP(Na, Nd))))
