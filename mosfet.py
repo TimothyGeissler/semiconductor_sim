@@ -1,7 +1,7 @@
 import math
-#import numpy as np
-#import matplotlib
-#import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
 Q = 1.602177 * math.pow(10, -19)
 ni = 1.07 * math.pow(10, 10)  # Intrinsic carrier concentration
@@ -27,7 +27,7 @@ class MOSFET:
     # Approx for lambda*vds < 1
     def gm_sat(self, vgs):
         g = self.mu_nP() * self.C_ox() * (self.W_ch / self.L_ch) * (vgs - self.V_TN())
-        print("g_m_sat=" + str(g) + " (units)")
+        print("g_m_sat=" + str(g) + " mS")
         return g
     
     # bulk body-effect coefficient
@@ -108,9 +108,7 @@ class MOSFET:
 
     # Threshold voltage @ V_BS = 0
     def V_TN(self):
-        gamma = (math.sqrt((2 * Q * epsilon_si * epsilon_o * self.Na) / (self.C_ox())))
-        print("gamma_BN=" + str(gamma))
-        vtn = self.V_FB() + 2 * self.phi_fb() + gamma * math.sqrt(2 * self.phi_fb())
+        vtn = self.V_FB() + 2 * self.phi_fb() + self.gamma_bn() * math.sqrt(2 * self.phi_fb())
         print("V_TN=" + str(vtn) + " V")
         return vtn
 
@@ -235,14 +233,14 @@ class MOSFET:
         return c
 
 
-Na = 2.5 * math.pow(10, 16)
+Na = 4 * math.pow(10, 16)
 X_ox = 4.45 * math.pow(10, -6)
-W_ch = 3.5 * math.pow(10, -4)
+W_ch = 0.035# * math.pow(10, -4)
 L_ch = 5 * math.pow(10, -4)
 
-N_f = 1.6 * math.pow(10, 11)
+N_f = 0# 1.6 * math.pow(10, 11)
 Q_it = 0
 Q_f = Q * N_f
 
 mos = MOSFET(Na, X_ox, W_ch, L_ch, Q_it, Q_f)
-mos.gamma_bn()
+mos.output_curve_lvl2(250, mos.V_TN())
