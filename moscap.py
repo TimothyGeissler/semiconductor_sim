@@ -59,7 +59,8 @@ class MOSCAP:
     
     # Threshold voltage, Q_it = Q_f = 0
     def V_tn(self):
-        v = self.phi_pm() - ((self.Q_f + self.Q_it) / self.C_ox()) + 2*self.phi_fb() + math.sqrt(4 * Q * epsilon_o * epsilon_si * self.phi_fb())/self.C_ox()
+        #v = self.phi_pm() - ((self.Q_f + self.Q_it) / self.C_ox()) + 2*self.phi_fb() + math.sqrt(4 * Q * epsilon_o * epsilon_si * self.phi_fb())/self.C_ox()
+        v = self.V_fb() + 2 * self.phi_fb() + (math.sqrt(4 * Q * epsilon_si * epsilon_o * self.Na * self.phi_fb()) / self.C_ox())
         print("V_TN=" + str(v) + " V")
         return v
     
@@ -154,11 +155,11 @@ class MOSCAP:
         return c
 
 Na = 2.5*math.pow(10, 16)
-X_ox = 3.5*math.pow(10, -6)
+X_ox = (350)*math.pow(10, -8) # Angstrom * 10^-8 = cm
 N_f = 1.6 * math.pow(10, 11)
 Q_it = 0
 Q_f = Q * N_f
 
 
 mos = MOSCAP(Na, X_ox, Q_it, Q_f)
-mos.C_gb_HF_inv()
+mos.V_tn()
