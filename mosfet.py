@@ -29,7 +29,24 @@ class MOSFET:
         g = self.mu_nP() * self.C_ox() * (self.W_ch / self.L_ch) * (vgs - self.V_TN())
         print("g_m_sat=" + str(g) + " mS")
         return g
-    
+
+    # saturation-range drain-to-source resistance
+    def r_ds_sat(self, Va, mu_ch, Vgs):
+        r = abs(Va) / self.Id_sat(mu_ch, Vgs)
+        print("r_ds_sat=" + str(r) + " Ohm")
+        return r
+
+    #Cutoff frequency
+    def f_T(self, vgs, mu_ch):
+        f = ((3 * mu_ch) / (4 * math.pi * self.L_ch**2)) * (vgs - self.V_TN())
+        print("f_T=" + "{:E}".format(f) + "Hz")
+        return f
+    # Saturation drain current (Vbs = 0)
+    def Id_sat(self, mu_ch, Vgs):
+        i_d = mu_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((Vgs - self.V_TN()) ** 2)
+        print("Id_sat=" + str(i_d) + " A")
+        return i_d
+
     # bulk body-effect coefficient
     def gamma_bn(self):
         gamma = math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na) / self.C_ox()
@@ -77,6 +94,30 @@ class MOSFET:
         plt.show()
         return 0
 
+    # SQRT output Curve Sah model (lvl2)
+    def output_curve_lvl2_sqrt(self, mu_ch, vtn):
+        plot = [0 for j in range(10)]  # Fix the dimensions of the array
+        x = np.linspace(0, 10, 10)
+        for vgs in range(0, 10):
+            vdsat = vgs - vtn
+            if 3 >= vdsat:  # saturation region
+                i_d = mu_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((vgs - vtn) ** 2)
+            else:  # linear region
+                i_d = mu_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - vtn) * 3 - 0.5 * (3 ** 2))
+            # Adjust indices to fix the IndexError
+            plot[vgs - 1] = math.sqrt(i_d)
+
+        # np.savetxt("plot.txt", plot, delimiter=',')
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        ax.plot(x, plot, label="V_DS = 3V")
+        ax.legend()
+        ax.set_xlabel('V_DS')
+        ax.set_ylabel('sqrt(I_d)')
+        ax.set_title('I_d(V_DS) Output Curve - Sah Model')
+        plt.show()
+        return 0
+
     # Output curve I-M Model (lvl1)
     def output_curve_lvl1(self, mu_ch, vtn):
         plot = [[0 for j in range(5)] for i in range(5)]  # Fix the dimensions of the array
@@ -89,7 +130,7 @@ class MOSFET:
                 else:  # linear region
                     i_d = mu_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - self.V_FB() - 2 * self.phi_fb() - 0.5 * vds) * vds) - (2/3)*((math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na)) / (self.C_ox())) * ((2*self.phi_fb() + vds)**(3/2) - (2*self.phi_fb())**(3/2))
                 # Adjust indices to fix the IndexError
-                plot[vgs-1][vds-1] = i_d
+                plot[vgs-1][vds-1] = -i_d
 
         # np.savetxt("plot.txt", plot, delimiter=',')
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -243,4 +284,4 @@ Q_it = 0
 Q_f = Q * N_f
 
 mos = MOSFET(Na, X_ox, W_ch, L_ch, Q_it, Q_f)
-mos.output_curve_lvl2(250, mos.V_TN())
+mos.output_curve_lvl1(250, mos.V_TN())
