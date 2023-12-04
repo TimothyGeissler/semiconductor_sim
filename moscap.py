@@ -36,7 +36,7 @@ class MOSCAP:
     
     #Space-charge voltage @ Vtn
     def V_sc_tn(self):
-        print("V_sc(V_TN)=" + str(self.phi_fb()*2) + " V")
+        print("V_sc(V_TN)=" + str(self.phi_fb()*2) + " V (invert if p-type)")
         return self.phi_fb()*2
 
     # Depletion width @ Vtn
@@ -53,14 +53,16 @@ class MOSCAP:
 
     # Charge Density in SCR @ Vtn
     def Q_sc_tn(self):
-        q = -Q * self.Na * self.W_d_vtn 
+        q = -Q * self.Na * self.W_d_vtn()
         print("Q_sc(V_tn)=" + str(q) + " C/cm^2")
-        return Q
+        return q
     
-    # Threshold voltage, Q_it = Q_f = 0
+    # Threshold voltage
     def V_tn(self):
-        #v = self.phi_pm() - ((self.Q_f + self.Q_it) / self.C_ox()) + 2*self.phi_fb() + math.sqrt(4 * Q * epsilon_o * epsilon_si * self.phi_fb())/self.C_ox()
-        v = self.V_fb() + 2 * self.phi_fb() + (math.sqrt(4 * Q * epsilon_si * epsilon_o * self.Na * self.phi_fb()) / self.C_ox())
+        # If Q_it = Q_f = 0
+        # = self.V_fb() + 2 * self.phi_fb() + (math.sqrt(4 * Q * epsilon_si * epsilon_o * self.Na * self.phi_fb()) / self.C_ox())
+        # Generalized:
+        v = self.phi_pm() - ((self.Q_f + self.Q_it) / self.C_ox()) + 2 * self.phi_fb() + (math.sqrt(4 * Q * epsilon_si * epsilon_o * self.Na * self.phi_fb()) / self.C_ox())
         print("V_TN=" + str(v) + " V")
         return v
     
@@ -76,6 +78,24 @@ class MOSCAP:
         print("V_fb=" + str(v) + " V")
         return v
     
+    # Transverse E field at Vtn
+    def E_ox(self):
+        trans_field = (math.sqrt(4 * Q * epsilon_si * epsilon_o * self.Na * self.phi_fb()) - self.Q_f - self.Q_it) / (epsilon_o * epsilon_ox)
+        print("E_ox=" + "{:E}".format(trans_field) + "V/cm")
+        return trans_field
+
+    # Voltage across gate-oxide layer at vtn
+    def V_ox(self):
+        v = self.X_ox * self.E_ox()
+        print("V_ox=" + str(v) + "V")
+        return v
+    
+    # Transverse E field in substrate @ gate-oxide/substract interface at vtn
+    def E_b(self):
+        eb = -(self.Q_sc_tn() / (epsilon_si * epsilon_o))
+        print("E_bulk=" + "{:E}".format(eb) + " V/cm")
+        return eb
+ 
     # Mobility of holes
     def mu_pP(self):
         mu = 49.7 + 418.3/(1 + math.pow(((self.Na)/(1.6*math.pow(10, 17))), 0.7))
@@ -155,11 +175,11 @@ class MOSCAP:
         return c
 
 Na = 2.5*math.pow(10, 16)
-X_ox = (350)*math.pow(10, -8) # Angstrom * 10^-8 = cm
-N_f = 1.6 * math.pow(10, 11)
+X_ox = (400)*math.pow(10, -8) # Angstrom * 10^-8 = cm
+N_f = 0#4 * math.pow(10, 10)
 Q_it = 0
 Q_f = Q * N_f
 
 
 mos = MOSCAP(Na, X_ox, Q_it, Q_f)
-mos.V_tn()
+mos.V_sc_tn()

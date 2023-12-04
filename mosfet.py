@@ -26,31 +26,31 @@ class MOSFET:
     # Forward Transconductance (sat)
     # Approx for lambda*vds < 1
     def gm_sat(self, vgs):
-        g = self.mu_nP() * self.C_ox() * (self.W_ch / self.L_ch) * (vgs - self.V_TN())
-        print("g_m_sat=" + str(g) + " mS")
+        g = mu_n_ch * self.C_ox() * (self.W_ch / self.L_ch) * (vgs - self.V_TN())
+        print("g_m_sat=" + "{:E}".format(g) + " mS")
         return g
 
     # saturation-range drain-to-source resistance
-    def r_ds_sat(self, Va, mu_ch, Vgs):
-        r = abs(Va) / self.Id_sat(mu_ch, Vgs)
+    def r_ds_sat(self, Va, Vgs):
+        r = abs(Va) / self.Id_sat(Vgs)
         print("r_ds_sat=" + str(r) + " Ohm")
         return r
 
     #Cutoff frequency
-    def f_T(self, vgs, mu_ch):
-        f = ((3 * mu_ch) / (4 * math.pi * self.L_ch**2)) * (vgs - self.V_TN())
+    def f_T(self, vgs):
+        f = ((3 * mu_n_ch) / (4 * math.pi * self.L_ch**2)) * (vgs - self.V_TN())
         print("f_T=" + "{:E}".format(f) + "Hz")
         return f
     # Saturation drain current (Vbs = 0)
-    def Id_sat(self, mu_ch, Vgs):
-        i_d = mu_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((Vgs - self.V_TN()) ** 2)
-        print("Id_sat=" + str(i_d) + " A")
+    def Id_sat(self, Vgs):
+        i_d = mu_n_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((Vgs - self.V_TN()) ** 2)
+        print("Id_sat=" + "{:E}".format(i_d) + " A")
         return i_d
 
     # bulk body-effect coefficient
     def gamma_bn(self):
         gamma = math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na) / self.C_ox()
-        print("gamma_bn=" + str(gamma))
+        print("gamma_bn=" + str(gamma) + " V^(1/2)")
         return gamma
 
     # Oxide capacitance
@@ -66,16 +66,16 @@ class MOSFET:
         return c
 
     # Output Curve Sah model (lvl2)
-    def output_curve_lvl2(self, mu_ch, vtn):
+    def output_curve_lvl2(self, vtn):
         plot = [[0 for j in range(5)] for i in range(5)]  # Fix the dimensions of the array
         x = np.linspace(0, 5, 5)
         for vgs in range(1, 6):  # Adjust the range to start from 0
             for vds in range(1, 6):
                 vdsat = vgs - vtn
                 if vds >= vdsat:  # saturation region
-                    i_d = mu_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((vgs - vtn) ** 2)
+                    i_d = mu_n_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((vgs - vtn) ** 2)
                 else:  # linear region
-                    i_d = mu_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - vtn) * vds - 0.5 * (vds ** 2))
+                    i_d = mu_n_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - vtn) * vds - 0.5 * (vds ** 2))
                 # Adjust indices to fix the IndexError
                 plot[vgs-1][vds-1] = i_d
 
@@ -95,15 +95,15 @@ class MOSFET:
         return 0
 
     # SQRT output Curve Sah model (lvl2)
-    def output_curve_lvl2_sqrt(self, mu_ch, vtn):
+    def output_curve_lvl2_sqrt(self, vtn):
         plot = [0 for j in range(10)]  # Fix the dimensions of the array
         x = np.linspace(0, 10, 10)
         for vgs in range(0, 10):
             vdsat = vgs - vtn
             if 3 >= vdsat:  # saturation region
-                i_d = mu_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((vgs - vtn) ** 2)
+                i_d = mu_n_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((vgs - vtn) ** 2)
             else:  # linear region
-                i_d = mu_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - vtn) * 3 - 0.5 * (3 ** 2))
+                i_d = mu_n_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - vtn) * 3 - 0.5 * (3 ** 2))
             # Adjust indices to fix the IndexError
             plot[vgs - 1] = math.sqrt(i_d)
 
@@ -119,16 +119,16 @@ class MOSFET:
         return 0
 
     # Output curve I-M Model (lvl1)
-    def output_curve_lvl1(self, mu_ch, vtn):
+    def output_curve_lvl1(self, vtn):
         plot = [[0 for j in range(5)] for i in range(5)]  # Fix the dimensions of the array
         x = np.linspace(0, 5, 5)
         for vgs in range(1, 6):  # Adjust the range to start from 0
             for vds in range(1, 6):
                 vdsat = vgs - self.V_FB() - 2 * self.phi_fb() + ((Q * epsilon_si * epsilon_o * self.Na) / (self.C_ox()**2))*(1 - math.sqrt(1 + ((2 * self.C_ox()**2) / (Q * epsilon_si * epsilon_o * self.Na)) * (vgs - self.V_FB())))
                 if vds >= vdsat:  # saturation region
-                    i_d = mu_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - self.V_FB() - 2 * self.phi_fb() - 0.5 * vdsat) * vdsat) - (2/3)*(math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na)) / (self.C_ox()) * ((2*self.phi_fb() + vdsat)**(3/2) - (2*self.phi_fb())**(3/2))
+                    i_d = mu_n_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - self.V_FB() - 2 * self.phi_fb() - 0.5 * vdsat) * vdsat) - (2/3)*(math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na)) / (self.C_ox()) * ((2*self.phi_fb() + vdsat)**(3/2) - (2*self.phi_fb())**(3/2))
                 else:  # linear region
-                    i_d = mu_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - self.V_FB() - 2 * self.phi_fb() - 0.5 * vds) * vds) - (2/3)*((math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na)) / (self.C_ox())) * ((2*self.phi_fb() + vds)**(3/2) - (2*self.phi_fb())**(3/2))
+                    i_d = mu_n_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - self.V_FB() - 2 * self.phi_fb() - 0.5 * vds) * vds) - (2/3)*((math.sqrt(2 * Q * epsilon_si * epsilon_o * self.Na)) / (self.C_ox())) * ((2*self.phi_fb() + vds)**(3/2) - (2*self.phi_fb())**(3/2))
                 # Adjust indices to fix the IndexError
                 plot[vgs-1][vds-1] = -i_d
 
@@ -272,16 +272,24 @@ class MOSFET:
         c = math.pow((self.X_ox / (epsilon_o * epsilon_ox)) + (self.W_d_max() / (epsilon_o * epsilon_si)), -1)
         print("C_gb,HF_inv(V_GB)=" + str(c) + " F/cm^2")
         return c
+    
+    # Channel-length-modulation coefficient
+    def lambda_n(self, va):
+        l = -1/va
+        print("lambda_n=" + str(l) + " V^-1")
+        return l
+
 
 
 Na = 4 * math.pow(10, 16)
-X_ox = 4.45 * math.pow(10, -6)
-W_ch = 0.035# * math.pow(10, -4)
-L_ch = 5 * math.pow(10, -4)
+X_ox = (445) * math.pow(10, -8) #angstrom to cm
+W_ch = (350) * math.pow(10, -4) #um to cm
+L_ch = (5) * math.pow(10, -4)
 
+mu_n_ch = 250
 N_f = 0# 1.6 * math.pow(10, 11)
 Q_it = 0
 Q_f = Q * N_f
 
 mos = MOSFET(Na, X_ox, W_ch, L_ch, Q_it, Q_f)
-mos.output_curve_lvl1(250, mos.V_TN())
+mos.f_T(3)
