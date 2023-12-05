@@ -1,7 +1,7 @@
 import math
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
+#import numpy as np
+#import matplotlib
+#import matplotlib.pyplot as plt
 
 Q = 1.602177 * math.pow(10, -19)
 ni = 1.07 * math.pow(10, 10)  # Intrinsic carrier concentration
@@ -273,6 +273,18 @@ class MOSFET:
         print("C_gb,HF_inv(V_GB)=" + str(c) + " F/cm^2")
         return c
     
+    # Gate to source overlap capacitance
+    def C_gs_ov(self, L_ov):
+        c = (epsilon_o * epsilon_ox * self.W_ch * L_ov) / self.X_ox
+        print("C_gs.ov=" + str(c) + "F/cm^2")
+        return c
+    
+    # saturation bias range gate-to-source capacitance
+    def c_gs_sat(self, L_ov):
+        c = (2/3)*self.C_ox() * self.C_gs_ov(L_ov)
+        print("C_gs=" + str(c) + "F/cm^2")
+        return c
+
     # Channel-length-modulation coefficient
     def lambda_n(self, va):
         l = -1/va
@@ -281,15 +293,15 @@ class MOSFET:
 
 
 
-Na = 4 * math.pow(10, 16)
-X_ox = (445) * math.pow(10, -8) #angstrom to cm
-W_ch = (350) * math.pow(10, -4) #um to cm
-L_ch = (5) * math.pow(10, -4)
+Na = 1.2 * math.pow(10, 16)
+X_ox = (22) * math.pow(10, -8) #angstrom to cm
+W_ch = (4) * math.pow(10, -4) #um to cm
+L_ch = (0.1) * math.pow(10, -4)
 
-mu_n_ch = 250
-N_f = 0# 1.6 * math.pow(10, 11)
+mu_n_ch = 266.136
+N_f = 3.2 * math.pow(10, 10)
 Q_it = 0
 Q_f = Q * N_f
 
 mos = MOSFET(Na, X_ox, W_ch, L_ch, Q_it, Q_f)
-mos.f_T(3)
+mos.c_gs_sat(0.1 * L_ch)

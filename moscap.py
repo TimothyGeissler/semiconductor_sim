@@ -57,6 +57,26 @@ class MOSCAP:
         print("Q_sc(V_tn)=" + str(q) + " C/cm^2")
         return q
     
+    def Q_sc_vgb(self, vgb):
+        beta = Q / (kB * T)
+        ldb = math.sqrt((epsilon_o * epsilon_si * kB * T) / (Q**2 * self.Na))
+        qsc = ((math.sqrt(2) * epsilon_o * epsilon_si * kB * T) / (Q * ldb)) * ((math.exp(-beta * vgb) + beta * vgb - 1) + (self.nP() / self.Na) * (math.exp(beta * vgb) - beta * vgb - 1))**(0.5)
+        print("Q_sc(V_GB)=" + str(qsc) + " C/cm^2")
+        return qsc
+    
+    # substrate inversion charge (inversion bias range)
+    def Q_inv_b(self, vgb):
+        qinv = -self.C_ox() * (vgb - self.V_tn())
+        print("Q_inv,b=" + str(qinv) + " C/cm^2")
+        return qinv
+    
+    def v_sc_inv(self, vgb):
+        ldb = math.sqrt((epsilon_o * epsilon_si * kB * T) / (Q**2 * self.Na))
+        #v = 2 * self.phi_fb() + ((2 * kB * T) / Q) * math.log(1 - ((Q * ldb) / (math.sqrt(2) * epsilon_si * epsilon_o * kB * T)) * self.Q_inv_b(vgb))
+        v = 2 * self.phi_fb()
+        print("V_sc_inv(Vgb)=" + str(v) + " V")
+        return v
+
     # Threshold voltage
     def V_tn(self):
         # If Q_it = Q_f = 0
@@ -162,6 +182,18 @@ class MOSCAP:
         print("C_gb,LF(V_FB)=" + str(c) + " F/cm^2")
         return c
     
+    def C_gb_LF_vgb(self, vgb):
+        c = (self.C_ox() * self.C_sc_LF_vgb(vgb)) / (self.C_ox()  + self.C_sc_LF_vgb(vgb))
+        print("C_gb_LF(Vgb)=" + str(c) + " C/cm^2")
+        return c
+
+    def C_sc_LF_vgb(self, vgb):
+        beta = Q / (kB * T)
+        ldb = math.sqrt((epsilon_o * epsilon_si * kB * T) / (Q**2 * self.Na))
+        csc = ((epsilon_o * epsilon_si) / (math.sqrt(2) * ldb)) * (((1 - math.exp(-beta*self.v_sc_inv(vgb))) + (self.nP() / self.Na) * (math.exp(beta*self.v_sc_inv(vgb)) - 1)) / (math.sqrt((math.exp(-beta*self.v_sc_inv(vgb)) + beta*self.v_sc_inv(vgb) - 1) + (self.nP() / self.Na) * (math.exp(beta*self.v_sc_inv(vgb)) - beta*self.v_sc_inv(vgb) - 1))))
+        print("C_sc_LF(Vgb)=" + str(csc) + " C/cm^2")
+        return csc
+
     # Gate-to-bulk capacitance @ high Freq, Vtn
     def C_gb_HF(self):
         c = (self.C_ox() * (self.C_sc_HF() + self.Q_it)) / (self.C_ox() + self.C_sc_HF() + self.Q_it)
@@ -174,12 +206,12 @@ class MOSCAP:
         print("C_gb,HF_inv(V_GB)=" + str(c) + " F/cm^2")
         return c
 
-Na = 2.5*math.pow(10, 16)
-X_ox = (400)*math.pow(10, -8) # Angstrom * 10^-8 = cm
-N_f = 0#4 * math.pow(10, 10)
+Na = 3.5*math.pow(10, 17)
+X_ox = (35)*math.pow(10, -8) # Angstrom * 10^-8 = cm
+N_f = 2.8 * math.pow(10, 10)
 Q_it = 0
 Q_f = Q * N_f
 
 
 mos = MOSCAP(Na, X_ox, Q_it, Q_f)
-mos.V_sc_tn()
+mos.phi_pm()
