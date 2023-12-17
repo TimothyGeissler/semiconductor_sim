@@ -41,11 +41,22 @@ class MOSFET:
         f = ((3 * mu_n_ch) / (4 * math.pi * self.L_ch**2)) * (vgs - self.V_TN())
         print("f_T=" + "{:E}".format(f) + "Hz")
         return f
-    # Saturation drain current (Vbs = 0)
-    def Id_sat(self, Vgs):
+    # Saturation drain current (Vbs = 0) - SAH
+    def Id_sat_lvl1(self, Vgs):
         i_d = mu_n_ch * self.C_ox() * (self.W_ch / (2 * self.L_ch)) * ((Vgs - self.V_TN()) ** 2)
         print("Id_sat=" + "{:E}".format(i_d) + " A")
         return i_d
+    
+    def VD_sat_lvl2(self, vgs):
+        vdsat = vgs - self.V_FB() - 2 * self.phi_fb() + ((Q * epsilon_o * epsilon_si * self.Na) / (self.C_ox() ** 2)) * (1 - math.sqrt(1 + ((2 * self.C_ox()**2)/ (Q * epsilon_o * epsilon_si * self.Na)) * (vgs - self.V_FB() - 0)))
+        print("V_DSat=" + str(vdsat) + " V - lvl2")
+        return vdsat
+
+    # Saturation drain current (Vbs = 0) - Ihantola-Moll
+    def Id_sat_lvl2(self, vgs):
+        id = mu_n_ch * self.C_ox() * (self.W_ch / self.L_ch) * ((vgs - self.V_FB() - 2 * self.phi_fb() - (0.5) * self.VD_sat_lvl2(vgs)) * self.VD_sat_lvl2(vgs) - (2/3) * (math.sqrt(2 * Q * epsilon_o * epsilon_si * self.Na) / self.C_ox()) * ((2 * self.phi_fb() + self.VD_sat_lvl2(vgs) - 0) ** (3/2) - (2 * self.phi_fb() - 0) ** (3/2)))
+        print("I_D,sat=" + str(id) + " A - lvl2")
+        return id
 
     # bulk body-effect coefficient
     def gamma_bn(self):
@@ -299,15 +310,15 @@ class MOSFET:
 
 
 
-Na = 1.2 * math.pow(10, 18)
-X_ox = (22) * math.pow(10, -8) #angstrom to cm
-W_ch = (4) * math.pow(10, -4) #um to cm
-L_ch = (0.1) * math.pow(10, -4)
+Na = 4 * math.pow(10, 17)
+X_ox = (50) * math.pow(10, -8) #angstrom to cm
+W_ch = (15) * math.pow(10, -4) #um to cm
+L_ch = (5) * math.pow(10, -4)
 
-mu_n_ch = 266.136
-N_f = 3.2 * math.pow(10, 10)
+mu_n_ch = 250
+N_f = 3 * math.pow(10, 10)
 Q_it = 0
 Q_f = Q * N_f
 
 mos = MOSFET(Na, X_ox, W_ch, L_ch, Q_it, Q_f)
-mos.c_gs_sat(0.1 * L_ch)
+mos.Id_sat_lvl2(1.5)

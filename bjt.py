@@ -265,7 +265,7 @@ class BJT:
     # emitter injection efficiency
     def gamma_E(self):
         g = (1 + ((self.L_nB() * self.D_pE() * self.Na_B) / (self.L_pE() * self.D_nB() * self.Nd_E)) * (self.coth((self.W_E - self.Wd_E()) / self.L_pE()) / self.coth((self.W_B - self.Wd_B_E() - self.Wd_B_C()) / self.L_nB())) + ((self.L_nB() * self.Na_B * self.Wd_BE_total()) / (2 * ni * self.tau_SCR_BE() * self.D_nB())) * np.tanh((self.W_B - self.Wd_B_E() - self.Wd_B_C()) / self.L_nB()) * math.exp(-(Q * V_BE) / (2 * kB * T)))**(-1)
-        print("gamma_F=" + str(g))
+        print("gamma_E=" + str(g))
         return g
     
     # Base transport factor
@@ -289,17 +289,17 @@ class BJT:
 Nd_E = 2 * math.pow(10, 20) # Emmitter
 Na_B = 2 * math.pow(10, 18) # Base
 Nd_C = 2 * math.pow(10, 16) # Collector
-A = ((5) * math.pow(10, -4)) * ((5) * math.pow(10, -4)) # um^2 to cm^2
+A = ((20) * math.pow(10, -4)) * ((20) * math.pow(10, -4)) # um^2 to cm^2
 
-W_E = (1.2) * math.pow(10, -4) # Emmitter Width to um
-W_B = (0.5) * math.pow(10, -4) # Base Width to um
-W_C = (6) * math.pow(10, -4) # Collector Width to um
+W_E = (2) * math.pow(10, -4) # Emmitter Width to um
+W_B = (0.75) * math.pow(10, -4) # Base Width to um
+W_C = (10) * math.pow(10, -4) # Collector Width to um
 
-V_BE = 0.75
-V_BC = -5
+V_BE = 0.65
+V_BC = -8
 
 bjt = BJT(Nd_E, Na_B, Nd_C, A, W_B, W_C, W_E, V_BC, V_BE)
-bjt.f_T()
+bjt.D_nB()
 
 #public_method_names = [method for method in dir(bjt) if callable(getattr(bjt, method)) if not method.startswith('_')]  # 'private' methods start from _
 #for method in public_method_names:

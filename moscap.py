@@ -77,6 +77,7 @@ class MOSCAP:
         print("V_sc_inv(Vgb)=" + str(v) + " V")
         return v
 
+
     # Threshold voltage
     def V_tn(self):
         # If Q_it = Q_f = 0
@@ -87,7 +88,7 @@ class MOSCAP:
         return v
     
     # Oxide Voltage @ flatband
-    def V_ox(self):
+    def V_ox_fb(self):
         v = -((self.Q_f + self.Q_it) / self.C_ox())
         print("V_ox(V_FB)=" + str(v) + " V")
         return v
@@ -105,7 +106,7 @@ class MOSCAP:
         return trans_field
 
     # Voltage across gate-oxide layer at vtn
-    def V_ox(self):
+    def V_ox_vtn(self):
         v = self.X_ox * self.E_ox()
         print("V_ox=" + str(v) + "V")
         return v
@@ -205,13 +206,14 @@ class MOSCAP:
         c = math.pow((self.X_ox/(epsilon_o * epsilon_ox)) + (self.W_d_max() / (epsilon_o * epsilon_si)), -1)
         print("C_gb,HF_inv(V_GB)=" + str(c) + " F/cm^2")
         return c
+    
 
-Na = 3.5*math.pow(10, 17)
-X_ox = (35)*math.pow(10, -8) # Angstrom * 10^-8 = cm
-N_f = 2.8 * math.pow(10, 10)
+Na = 4*math.pow(10, 17)
+X_ox = (50)*math.pow(10, -8) # Angstrom * 10^-8 = cm
+N_f = 3 * math.pow(10, 10)
 Q_it = 0
 Q_f = Q * N_f
 
 
 mos = MOSCAP(Na, X_ox, Q_it, Q_f)
-mos.C_sc_LF_vgb(1.2816)
+mos.V_ox_vtn()

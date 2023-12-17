@@ -177,12 +177,53 @@ class PN:
         base = (WN - self.W_dN()) / self.L_rec_pN()
         print("Short-base ratio (n)=" + str(base))
 
-Na = 2*math.pow(10, 18)
-Nd = 8*math.pow(10, 17)
-W = 0.1 * math.pow(10, -4)
-A = 7 * math.pow(10, -5)
+    def Is_diff_LB_FB(self):
+        isp = (Q * self.D_nP() * (ni **2) * self.A) / (self.L_rec_nP() * self.Na)
+        isn = (Q * self.D_pN() * (ni **2) * self.A) / (self.L_rec_pN() * self.Nd)
+        print("I_S.diff" + str(isp + isn) + " A")
+        return isp + isn
+    
+    def I_SCR(self):
+        tau_rec_scr = (self.tau_rec_n() + self.tau_rec_p()) / 2
+        iscr = ((Q * ni * self.W_d() * self.A) / (2 * tau_rec_scr)) * (math.exp((Q * self.V_PN) / (2 * kB * T)) - 1)
+        print("I_SCR=" + str(iscr) + " A")
+        return iscr
+    
+    def I_d(self):
+        id = self.Is_diff_LB_FB() * (math.exp((Q * self.V_PN) / (kB * T)) - 1) + self.I_SCR() * (math.exp((Q * self.V_PN) / (2 * kB * T)) - 1)
+        print("I_d=" + str(id) + " A")
+        return id
+    
+    # depletion capacitance
+    def C_pn_dep(self):
+        c = math.sqrt(((Q * epsilon_o * epsilon_r) / 2) * ((self.Na * self.Nd) / (self.Na + self.Nd)) * (1/(self.v_bi()) - self.V_PN))
+        print("C_pn.dep=" + str(c) + " F")
+        return c
 
-VPN = 0.35
+    # quasi-neutral diffusion capacitance p-side (long base)
+    def C_pn_diff_P_long_RB(self):
+        c = (((Q**2) * (ni**2) * self.L_gen_nP()) / (kB * T * self.Na)) * math.exp((Q * self.V_PN) / (kB * T))
+        print("C_pn.diff,P,LB=" + str(c) + " F")
+        return c
+
+    # quasi-neutral diffusion capacitance n-side (long base)
+    def C_pn_diff_N_long_RB(self):
+        c = (((Q**2) * (ni**2) * self.L_gen_pN()) / (kB * T * self.Nd)) * math.exp((Q * self.V_PN) / (kB * T))
+        print("C_pn.diff,N,LB=" + str(c) + " F")
+        return c
+
+    def c_pn_LB_RB(self):
+        c = self.C_pn_diff_N_long_RB() + self.C_pn_diff_P_long_RB() + self.C_pn_dep()
+        print("C_pn_LB_RB=" + str(c) + " F")
+        return c
+
+
+Na = 4.5*math.pow(10, 17)
+Nd = 3.25*math.pow(10, 16)
+W = 0.1 * math.pow(10, -4)
+A = 4.5 * math.pow(10, -4)
+
+VPN = 0.45
 
 pn = PN(Na, Nd, VPN, W, A)
-pn.short_base_P(0.1*math.pow(10, -4))
+pn.v_bi()
