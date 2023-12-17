@@ -206,6 +206,12 @@ class MOSFET:
         mu = 232 + 1180 / (1 + math.pow(((self.Na) / (8 * math.pow(10, 16))), 0.9))
         print("mu_nP=" + str(mu) + " cm^2/Vs")
         return mu
+    
+    # Channel electron mobility
+    def mu_nch(self, theta, engma, mu_ltf):
+        mu = mu_ltf / (1 + ((self.vgs - self.V_TN()) / (theta * self.X_ox()))**engma)
+        print("mu_n,ch=" + str(mu) + " cm^2/Vs")
+        return mu
 
     # Majority carrier concentration
     def pP(self):
@@ -281,8 +287,8 @@ class MOSFET:
     
     # saturation bias range gate-to-source capacitance
     def c_gs_sat(self, L_ov):
-        c = (2/3)*self.C_ox() * self.C_gs_ov(L_ov)
-        print("C_gs=" + str(c) + "F/cm^2")
+        c = (2/3)*self.C_ox() * self.W_ch * self.L_ch + self.C_ox() * self.W_ch * L_ov
+        print("C_gs=" + str(c) + "F")
         return c
 
     # Channel-length-modulation coefficient
@@ -293,7 +299,7 @@ class MOSFET:
 
 
 
-Na = 1.2 * math.pow(10, 16)
+Na = 1.2 * math.pow(10, 18)
 X_ox = (22) * math.pow(10, -8) #angstrom to cm
 W_ch = (4) * math.pow(10, -4) #um to cm
 L_ch = (0.1) * math.pow(10, -4)
